@@ -137,64 +137,43 @@ De **PresentationLayer** verzorgt de interactie met de gebruiker via de console.
 **Bestand:** `PresentationLayer/Program.cs`
 
 ```csharp
-using System;
-using BusinessLayer;
+using Microsoft.AspNetCore.Mvc;
 
-namespace PresentationLayer
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
 {
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            var service = new InheemseSoortService();
-
-            while (true)
-            {
-                Console.WriteLine("Menu:");
-                Console.WriteLine("1. Registreer een nieuwe inheemse soort");
-                Console.WriteLine("2. Toon alle geregistreerde inheemse soorten");
-                Console.WriteLine("3. Afsluiten");
-                Console.Write("Maak een keuze: ");
-                var keuze = Console.ReadLine();
-
-                if (keuze == "1")
-                {
-                    Console.Write("Naam van de soort: ");
-                    var naam = Console.ReadLine();
-
-                    Console.Write("Locatie: ");
-                    var locatie = Console.ReadLine();
-
-                    Console.Write("Datum: ");
-                    var datum = Console.ReadLine();
-
-                    service.RegistreerInheemseSoort(naam, locatie, datum);
-                    Console.WriteLine("Soort geregistreerd!\n");
-                }
-                else if (keuze == "2")
-                {
-                    var soorten = service.HaalAlleInheemseSoortenOp();
-                    Console.WriteLine("Geregistreerde soorten:");
-
-                    foreach (var soort in soorten)
-                    {
-                        Console.WriteLine($"Naam: {soort.Naam}, Locatie: {soort.Locatie}, Datum: {soort.Datum}");
-                    }
-                    Console.WriteLine();
-                }
-                else if (keuze == "3")
-                {
-                    Console.WriteLine("Programma afgesloten.");
-                    break;
-                }
-                else
-                {
-                    Console.WriteLine("Ongeldige keuze, probeer opnieuw.\n");
-                }
-            }
-        }
-    }
+    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+app.UseHttpsRedirection();
+
+app.MapGet("/inheemseSoorten", () =>
+{
+    InheemseSoortService inheemseSoortService = new InheemseSoortService();    
+    return inheemseSoortService.HaalAlleInheemseSoortenOp();
+})
+.WithName("GetInheemseSoorten");
+
+app.MapPost("/add", ([FromBody]InheemseSoort inheemseSoort) =>
+{
+    InheemseSoortService inheemseSoortService = new InheemseSoortService();
+    inheemseSoortService.RegistreerInheemseSoort(inheemseSoort.Naam, inheemseSoort.LocatieNaam, inheemseSoort.Longitude, inheemseSoort.Latitude, inheemseSoort.Datum);
+})
+.WithName("Add");
+
+app.Run();
 ```
 
 **Checkvraag:**
